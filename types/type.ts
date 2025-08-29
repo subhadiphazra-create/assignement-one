@@ -1,7 +1,7 @@
 export interface Batch {
   batchId: string;
   batchTitle: string;
-  batchStatus: string;
+  batchStatus: "planned" | "active" | "completed";
   batchRegion: string;
   batchStartDate: string;
   batchEndDate: string;

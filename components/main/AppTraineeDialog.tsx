@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { addBatch } from "@/store/trainingSlice";
 import { v4 as uuidv4 } from "uuid";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { batchSchema } from "@/schemas/batchSchema";
+import { addBatch } from "@/store/trainingSlice";
 
 import {
   Dialog,
@@ -16,50 +20,46 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
-import { MultiSelect } from "@/components/ui/multi-select";
 
 import { Batch, Employees } from "@/types/type";
+import { SmartSelect } from "../ui/multi-select";
 
-type Props = {
-  employees: Employees;
-};
+type Props = { employees: Employees };
 
 export default function AppTraineeDialog({ employees }: Props) {
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
 
-  // ✅ Match Batch interface (omit batchId, it’s auto-generated)
-  const [form, setForm] = useState<Omit<Batch, "batchId">>({
-    batchTitle: "",
-    batchStatus: "planned",
-    batchRegion: "",
-    batchStartDate: "",
-    batchEndDate: "",
-    batchMentor: [],
-    batchReviewer: [],
-    batchTrainer: [],
-    batchTrainee: [],
-    companyId: "",
-    courseDescription: "",
-    uploadDate: "",
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<Batch>({
+    resolver: zodResolver(batchSchema),
+    defaultValues: {
+      batchId: uuidv4(),
+      batchTitle: "",
+      batchStatus: "planned",
+      batchRegion: "",
+      batchStartDate: "",
+      batchEndDate: "",
+      batchMentor: [],
+      batchReviewer: [],
+      batchTrainer: [],
+      batchTrainee: [],
+      companyId: "",
+      courseDescription: "",
+      uploadDate: new Date().toISOString(),
+    },
   });
 
-  const handleSubmit = () => {
-    const newBatch: Batch = {
-      batchId: uuidv4(),
-      ...form,
-      uploadDate: new Date().toISOString(),
-    };
-    dispatch(addBatch(newBatch));
+  const onSubmit = (data: Batch) => {
+    dispatch(addBatch(data));
     setOpen(false);
-    window.location.reload();
+    reset();
   };
 
   return (
@@ -67,159 +67,225 @@ export default function AppTraineeDialog({ employees }: Props) {
       <DialogTrigger asChild>
         <Button>Create Batch</Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="w-full md:min-w-5xl rounded-2xl h-[90%] overflow-x-auto scroll-bar-hide">
         <DialogHeader>
           <DialogTitle>Create Training Batch</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Batch Title */}
-          <div>
-            <Label>Batch Title</Label>
-            <Input
-              value={form.batchTitle}
-              onChange={(e) => setForm({ ...form, batchTitle: e.target.value })}
-              placeholder="Enter batch title"
-            />
-          </div>
-
-          {/* Status */}
-          <div>
-            <Label>Status</Label>
-            <Select
-              value={form.batchStatus}
-              onValueChange={(val) => setForm({ ...form, batchStatus: val })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="planned">Planned</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Region */}
-          <div>
-            <Label>Region</Label>
-            <Input
-              value={form.batchRegion}
-              onChange={(e) =>
-                setForm({ ...form, batchRegion: e.target.value })
-              }
-              placeholder="Enter region"
-            />
-          </div>
-
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-2">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Row 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>Start Date</Label>
+              <Label className="mb-3">Batch Title</Label>
               <Input
-                type="date"
-                value={form.batchStartDate}
-                onChange={(e) =>
-                  setForm({ ...form, batchStartDate: e.target.value })
-                }
+                {...register("batchTitle")}
+                placeholder="Enter batch title"
               />
+              {errors.batchTitle && (
+                <p className="text-red-500 text-sm mt-2">
+                  {errors.batchTitle.message}
+                </p>
+              )}
             </div>
             <div>
-              <Label>End Date</Label>
+              <Label className="mb-3">Company ID</Label>
               <Input
-                type="date"
-                value={form.batchEndDate}
-                onChange={(e) =>
-                  setForm({ ...form, batchEndDate: e.target.value })
-                }
+                {...register("companyId")}
+                placeholder="Enter company id"
               />
+              {errors.companyId && (
+                <p className="text-red-500 text-sm mt-2">
+                  {errors.companyId.message}
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Mentors */}
-          {/* Mentors */}
-          <div>
-            <Label>Mentors</Label>
-            <MultiSelect
-              options={employees.map((e) => ({
-                value: `${e.basicData.firstName} ${e.basicData.lastName}`,
-                label: `${e.basicData.firstName} ${e.basicData.lastName}`,
-                role: e.basicData.role,
-              }))}
-              value={form.batchMentor}
-              onChange={(val) => setForm({ ...form, batchMentor: val })}
-            />
+          {/* Row 2 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* ✅ Replaced with SmartSelect single select */}
+            <div>
+              <Label className="mb-3">Status</Label>
+              <SmartSelect
+                isMultiSelect={false}
+                options={[
+                  { label: "Planned", value: "planned" },
+                  { label: "Active", value: "active" },
+                  { label: "Completed", value: "completed" },
+                ]}
+                value={watch("batchStatus")}
+                onChange={(val) =>
+                  setValue(
+                    "batchStatus",
+                    val as "planned" | "active" | "completed",
+                    {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    }
+                  )
+                }
+                placeholder="Select status"
+              />
+              {errors.batchStatus && (
+                <p className="text-red-500 text-sm mt-2">
+                  {errors.batchStatus.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label className="mb-3">Region</Label>
+              <Input {...register("batchRegion")} placeholder="Enter region" />
+              {errors.batchRegion && (
+                <p className="text-red-500 text-sm mt-2">
+                  {errors.batchRegion.message}
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Reviewers */}
-          <div>
-            <Label>Reviewers</Label>
-            <MultiSelect
-              options={employees.map((e) => ({
-                value: `${e.basicData.firstName} ${e.basicData.lastName}`,
-                label: `${e.basicData.firstName} ${e.basicData.lastName}`,
-                role: e.basicData.role,
-              }))}
-              value={form.batchReviewer}
-              onChange={(val) => setForm({ ...form, batchReviewer: val })}
-            />
+          {/* Row 3 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="mb-3">Start Date</Label>
+              <Input type="date" {...register("batchStartDate")} />
+              {errors.batchStartDate && (
+                <p className="text-red-500 text-sm mt-2">
+                  {errors.batchStartDate.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label className="mb-3">End Date</Label>
+              <Input type="date" {...register("batchEndDate")} />
+              {errors.batchEndDate && (
+                <p className="text-red-500 text-sm mt-2">
+                  {errors.batchEndDate.message}
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Trainers */}
-          <div>
-            <Label>Trainers</Label>
-            <MultiSelect
-              options={employees.map((e) => ({
-                value: `${e.basicData.firstName} ${e.basicData.lastName}`,
-                label: `${e.basicData.firstName} ${e.basicData.lastName}`,
-                role: e.basicData.role,
-              }))}
-              value={form.batchTrainer}
-              onChange={(val) => setForm({ ...form, batchTrainer: val })}
-            />
+          {/* Row 4-5: SmartSelect (with UUIDs) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="mb-3">Mentors</Label>
+              <SmartSelect
+                isMultiSelect
+                options={employees.map((e) => ({
+                  value: e.userId,
+                  label: `${e.basicData.firstName} ${e.basicData.lastName}`,
+                  role: e.basicData.role,
+                }))}
+                value={watch("batchMentor")}
+                onChange={(val) =>
+                  setValue("batchMentor", val as string[], {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
+                placeholder="Select mentors"
+              />
+              {errors.batchMentor && (
+                <p className="text-red-500 text-sm mt-2">
+                  {errors.batchMentor.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label className="mb-3">Reviewers</Label>
+              <SmartSelect
+                isMultiSelect
+                options={employees.map((e) => ({
+                  value: e.userId,
+                  label: `${e.basicData.firstName} ${e.basicData.lastName}`,
+                  role: e.basicData.role,
+                }))}
+                value={watch("batchReviewer")}
+                onChange={(val) =>
+                  setValue("batchReviewer", val as string[], {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
+                placeholder="Select reviewers"
+              />
+              {errors.batchReviewer && (
+                <p className="text-red-500 text-sm mt-2">
+                  {errors.batchReviewer.message}
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Trainees */}
-          <div>
-            <Label>Trainees</Label>
-            <MultiSelect
-              options={employees.map((e) => ({
-                value: `${e.basicData.firstName} ${e.basicData.lastName}`,
-                label: `${e.basicData.firstName} ${e.basicData.lastName}`,
-                role: e.basicData.role,
-              }))}
-              value={form.batchTrainee}
-              onChange={(val) => setForm({ ...form, batchTrainee: val })}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label className="mb-3">Trainers</Label>
+              <SmartSelect
+                isMultiSelect
+                options={employees.map((e) => ({
+                  value: e.userId,
+                  label: `${e.basicData.firstName} ${e.basicData.lastName}`,
+                  role: e.basicData.role,
+                }))}
+                value={watch("batchTrainer")}
+                onChange={(val) =>
+                  setValue("batchTrainer", val as string[], {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
+                placeholder="Select trainers"
+              />
+              {errors.batchTrainer && (
+                <p className="text-red-500 text-sm mt-2">
+                  {errors.batchTrainer.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <Label className="mb-3">Trainees</Label>
+              <SmartSelect
+                isMultiSelect
+                options={employees.map((e) => ({
+                  value: e.userId,
+                  label: `${e.basicData.firstName} ${e.basicData.lastName}`,
+                  role: e.basicData.role,
+                }))}
+                value={watch("batchTrainee")}
+                onChange={(val) =>
+                  setValue("batchTrainee", val as string[], {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
+                placeholder="Select trainees"
+              />
+              {errors.batchTrainee && (
+                <p className="text-red-500 text-sm mt-2">
+                  {errors.batchTrainee.message}
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Company ID */}
+          {/* Row 6 */}
           <div>
-            <Label>Company ID</Label>
-            <Input
-              value={form.companyId}
-              onChange={(e) => setForm({ ...form, companyId: e.target.value })}
-              placeholder="Enter company id"
-            />
-          </div>
-
-          {/* Course Description */}
-          <div>
-            <Label>Course Description</Label>
+            <Label className="mb-3">Course Description</Label>
             <Textarea
-              value={form.courseDescription}
-              onChange={(e) =>
-                setForm({ ...form, courseDescription: e.target.value })
-              }
+              {...register("courseDescription")}
               placeholder="Enter course description"
             />
+            {errors.courseDescription && (
+              <p className="text-red-500 text-sm mt-2">
+                {errors.courseDescription.message}
+              </p>
+            )}
           </div>
 
-          <Button onClick={handleSubmit} className="w-full">
-            Save
+          <Button type="submit" className="w-full">
+            Save Batch
           </Button>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
