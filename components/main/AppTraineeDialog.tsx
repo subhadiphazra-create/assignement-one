@@ -165,7 +165,7 @@ export default function AppTraineeDialog({ employees }: Props) {
             </div>
           </div>
 
-          {/* Row 4-5: SmartSelect (with UUIDs) */}
+          {/* Row 4-5: SmartSelect (with UUIDs + role filtering) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="mb-3">Mentors</Label>
@@ -184,6 +184,9 @@ export default function AppTraineeDialog({ employees }: Props) {
                   })
                 }
                 placeholder="Select mentors"
+                filterKey="role"
+                showFilter
+                showSearchbar
               />
               {errors.batchMentor && (
                 <p className="text-red-500 text-sm mt-2">
@@ -208,6 +211,9 @@ export default function AppTraineeDialog({ employees }: Props) {
                   })
                 }
                 placeholder="Select reviewers"
+                filterKey="role"
+                showFilter
+                showSearchbar
               />
               {errors.batchReviewer && (
                 <p className="text-red-500 text-sm mt-2">
@@ -235,6 +241,9 @@ export default function AppTraineeDialog({ employees }: Props) {
                   })
                 }
                 placeholder="Select trainers"
+                filterKey="role"
+                showFilter
+                showSearchbar
               />
               {errors.batchTrainer && (
                 <p className="text-red-500 text-sm mt-2">
@@ -259,6 +268,9 @@ export default function AppTraineeDialog({ employees }: Props) {
                   })
                 }
                 placeholder="Select trainees"
+                filterKey="role"
+                showFilter
+                showSearchbar
               />
               {errors.batchTrainee && (
                 <p className="text-red-500 text-sm mt-2">

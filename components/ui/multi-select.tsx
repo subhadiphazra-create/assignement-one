@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 export interface Option {
   label: string;
   value: string;
-  role?: string;
+  [key: string]: any; // flexible for extra fields like role, designation etc.
 }
 
 interface SmartSelectProps {
@@ -38,6 +38,9 @@ interface SmartSelectProps {
   onChange: (value: string | string[]) => void;
   placeholder?: string;
   isMultiSelect?: boolean;
+  filterKey?: string; // 🔹 flexible filter key like "role", "designation"
+  showFilter?: boolean; // 🔹 default false
+  showSearchbar?: boolean; // 🔹 default false
 }
 
 export function SmartSelect({
@@ -46,17 +49,30 @@ export function SmartSelect({
   onChange,
   placeholder = "Select...",
   isMultiSelect = false,
+  filterKey,
+  showFilter = false,
+  showSearchbar = false,
 }: SmartSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
-  const [roleFilter, setRoleFilter] = React.useState<string>("All");
+  const [filterValue, setFilterValue] = React.useState<string>("All");
 
-  const roles = ["All", ...Array.from(new Set(options.map((o) => o.role)))];
+  // 🔹 Create unique filter values if filterKey & showFilter are provided
+  const filterValues =
+    showFilter && filterKey
+      ? ["All", ...Array.from(new Set(options.map((o) => o[filterKey])))]
+      : [];
 
+  // 🔹 Filter logic
   const filteredOptions = options.filter((opt) => {
-    const matchesRole = roleFilter === "All" || opt.role === roleFilter;
-    const matchesSearch = opt.label.toLowerCase().includes(search.toLowerCase());
-    return matchesRole && matchesSearch;
+    const matchesFilter =
+      !showFilter || filterValue === "All" || opt[filterKey || ""] === filterValue;
+
+    const matchesSearch =
+      !showSearchbar ||
+      opt.label.toLowerCase().includes(search.toLowerCase());
+
+    return matchesFilter && matchesSearch;
   });
 
   /** ---------------------- MULTI SELECT ---------------------- */
@@ -133,29 +149,35 @@ export function SmartSelect({
         </PopoverTrigger>
 
         <PopoverContent className="w-[300px] p-0">
-          {/* 🔹 Role Filter */}
-          <div className="p-2 border-b">
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Filter by role" />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((r) => (
-                  <SelectItem key={r} value={r || ""}>
-                    {r}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* 🔹 Conditional Filter */}
+          {showFilter && filterKey && (
+            <div className="p-2 border-b">
+              <Select value={filterValue} onValueChange={setFilterValue}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={`Filter by ${filterKey}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filterValues.map((val) => (
+                    <SelectItem key={val} value={val || ""}>
+                      {val}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
-          {/* 🔹 Search + Options */}
+          {/* 🔹 Conditional Search + Options */}
           <Command>
-            <CommandInput
-              placeholder={`Search in ${roleFilter}...`}
-              value={search}
-              onValueChange={setSearch}
-            />
+            {showSearchbar && (
+              <CommandInput
+                placeholder={`Search in ${
+                  showFilter ? filterValue : "options"
+                }...`}
+                value={search}
+                onValueChange={setSearch}
+              />
+            )}
             <CommandList>
               <CommandEmpty>No option found.</CommandEmpty>
               <CommandGroup>
@@ -173,9 +195,11 @@ export function SmartSelect({
                       )}
                     />
                     {option.label}
-                    <span className="text-xs text-gray-400 ml-2">
-                      ({option.role})
-                    </span>
+                    {filterKey && option[filterKey] && (
+                      <span className="text-xs text-gray-400 ml-2">
+                        ({option[filterKey]})
+                      </span>
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -208,13 +232,35 @@ export function SmartSelect({
       </PopoverTrigger>
 
       <PopoverContent className="w-[300px] p-0">
-        {/* 🔹 Search + Options */}
+        {/* 🔹 Conditional Filter */}
+        {showFilter && filterKey && (
+          <div className="p-2 border-b">
+            <Select value={filterValue} onValueChange={setFilterValue}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={`Filter by ${filterKey}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {filterValues.map((val) => (
+                  <SelectItem key={val} value={val || ""}>
+                    {val}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* 🔹 Conditional Search + Options */}
         <Command>
-          <CommandInput
-            placeholder={`Search in ${roleFilter}...`}
-            value={search}
-            onValueChange={setSearch}
-          />
+          {showSearchbar && (
+            <CommandInput
+              placeholder={`Search in ${
+                showFilter ? filterValue : "options"
+              }...`}
+              value={search}
+              onValueChange={setSearch}
+            />
+          )}
           <CommandList>
             <CommandEmpty>No option found.</CommandEmpty>
             <CommandGroup>
@@ -235,6 +281,11 @@ export function SmartSelect({
                     )}
                   />
                   {option.label}
+                  {filterKey && option[filterKey] && (
+                    <span className="text-xs text-gray-400 ml-2">
+                      ({option[filterKey]})
+                    </span>
+                  )}
                 </CommandItem>
               ))}
             </CommandGroup>
