@@ -1,4 +1,3 @@
-// store/eventsSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { IEvent } from "@/components/calendar/interfaces";
 

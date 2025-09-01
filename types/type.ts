@@ -133,3 +133,26 @@ export interface Employee {
 }
 
 export type Employees = Employee[];
+
+
+export interface PlanTopic {
+  topicId: string;
+  topicTitle: string;
+  topicDescription: string;
+  topicDurationValue: number;
+  topicDuration: "days" | "weeks" | "months";
+  topicResources: {
+    id: string;
+    name: string;
+    size?: number;
+    type?: string;
+  }[];
+}
+
+export interface TrainingPlan {
+  planId: string;
+  planTitle: string;
+  planStartDate: string;
+  planTopics: PlanTopic[];
+  createdAt: string;
+}
