@@ -2,7 +2,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  CheckCheck,
+  CirclePlus,
   CircleSmall,
+  Eye,
+  FolderOpen,
+  History,
+  LayoutList,
+  NotebookPen,
+  Pencil,
   Percent,
   SendHorizonal,
   UserCheck,
@@ -10,12 +18,28 @@ import {
 } from "lucide-react";
 import { mockEmployees } from "@/constants";
 import { Batch } from "@/types/type";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import AddPlanDialog from "./AddPlanDialog";
 
 interface BatchCardProps {
   batch: Batch;
 }
 
 export default function BatchCard({ batch }: BatchCardProps) {
+  // Separate states for each dialog
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showMarksDialog, setShowMarksDialog] = useState(false);
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [showAddPlanDialog, setShowAddPlanDialog] = useState(false);
+
   const checkIsComplete = (endDate: string) => {
     return new Date() > new Date(endDate);
   };
@@ -31,73 +55,144 @@ export default function BatchCard({ batch }: BatchCardProps) {
       : "Unknown";
   };
 
+  const options = [
+    {
+      label: "Add Training Plan",
+      action: () => setShowAddPlanDialog(true),
+      icon: <CirclePlus size={16} />,
+    },
+    { label: "View Training Plan", action: () => {}, icon: <Eye size={16} /> },
+    { label: "Open Folder", action: () => {}, icon: <FolderOpen size={16} /> },
+  ];
+
   return (
-    <Card className="w-full md:max-w-md mt-5">
-      <CardHeader>
-        <CardTitle className="border-b pb-5 flex justify-between">
-          <h2 className="text-md font-semibold flex items-center gap-3">
-            <SendHorizonal width={16} height={16} /> {batch.batchTitle}
-          </h2>
-          <p className="text-md font-semibold flex items-center gap-3">
-            {!checkIsComplete(batch.batchEndDate) && (
-              <CircleSmall
-                width={16}
-                height={16}
-                color="green"
-                className="animate-ping"
-              />
-            )}
-            {checkIsComplete(batch.batchEndDate) ? "Completed" : "Active"}
-          </p>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Trainees */}
-        <div>
-          <h1 className="font-bold text-xl">Trainees</h1>
-          {batch.batchTrainee.map((trainee, key) => (
-            <div key={key}>
-              <p className="text-md font-semibold flex items-center gap-3 my-4">
-                <UserRoundCheck width={18} height={18} />
-                {findNameById(trainee)}
-              </p>
-              <hr />
-              <p className="text-md font-semibold flex items-center gap-3 my-4">
-                <Percent width={16} height={16} />
-                Assignment Marks: <span className="font-extralight">n/a</span>
-              </p>
-              <hr />
-            </div>
-          ))}
-        </div>
+    <>
+      <Card className="w-full md:max-w-md mt-4">
+        <CardHeader>
+          <CardTitle className="border-b pb-5 flex justify-between items-center">
+            <h2 className="text-md font-semibold flex items-center gap-3">
+              <SendHorizonal width={16} height={16} /> {batch.batchTitle}
+            </h2>
+            <div className="flex items-center gap-3">
+              {!checkIsComplete(batch.batchEndDate) ? (
+                <CircleSmall
+                  width={16}
+                  height={16}
+                  color="green"
+                  className="animate-ping"
+                />
+              ) : (
+                <CheckCheck width={18} height={18} color="green" />
+              )}
+              {checkIsComplete(batch.batchEndDate) ? "Completed" : "Active"}
 
-        {/* Batch Seniors */}
-        <div>
-          <h1 className="font-bold text-xl mt-7">Batch Seniors</h1>
-
-          {[
-            { label: "Trainers", members: batch.batchTrainer },
-            { label: "Mentors", members: batch.batchMentor },
-            { label: "Reviewers", members: batch.batchReviewer },
-          ].map((section, idx) => (
-            <div key={idx}>
-              <h3 className="text-md font-semibold flex items-center gap-3 mt-4 mb-1">
-                <UserCheck width={16} height={16} />
-                {section.label}:
-              </h3>
-              <p className="text-sm font-normal">
-                {section.members.map((id, key) => (
-                  <span key={key}>
-                    {findNameById(id)}
-                    {key < section.members.length - 1 ? ", " : ""}
-                  </span>
-                ))}
-              </p>
-              <hr className="my-3"/>
+              {/* DropdownMenu for Options */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="bg-transparent border text-black dark:text-white hover:bg-slate-100 dark:hover:bg-black">
+                    <LayoutList />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={5}>
+                  {options.map((option, key) => (
+                    <DropdownMenuItem
+                      key={key}
+                      onClick={option.action}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      {option.icon}
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          {/* Trainees */}
+          <div>
+            <h1 className="font-bold text-xl">Trainees</h1>
+            {batch.batchTrainee.map((trainee, key) => (
+              <div key={key}>
+                <div className="flex justify-between items-center">
+                  <p className="text-md font-semibold flex items-center gap-3 my-4">
+                    <UserRoundCheck width={18} height={18} />
+                    {findNameById(trainee)}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setShowHistoryDialog(true)}
+                      className="bg-transparent border text-black dark:text-white hover:bg-slate-100 dark:hover:bg-black"
+                    >
+                      <History />
+                    </Button>
+                    <Button
+                      onClick={() => setShowEditDialog(true)}
+                      className="bg-transparent border text-black dark:text-white hover:bg-slate-100 dark:hover:bg-black"
+                    >
+                      <Pencil />
+                    </Button>
+                    <Button
+                      onClick={() => setShowMarksDialog(true)}
+                      className="bg-transparent border text-black dark:text-white hover:bg-slate-100 dark:hover:bg-black"
+                    >
+                      <NotebookPen />
+                    </Button>
+                    <Button
+                      onClick={() => setShowFeedbackDialog(true)}
+                      className="bg-transparent border text-black dark:text-white hover:bg-slate-100 dark:hover:bg-black"
+                    >
+                      <Eye />
+                    </Button>
+                  </div>
+                </div>
+                <hr />
+                <p className="text-md font-semibold flex items-center gap-3 my-4">
+                  <Percent width={16} height={16} />
+                  Assignment Marks: <span className="font-extralight">n/a</span>
+                </p>
+                <hr />
+              </div>
+            ))}
+          </div>
+
+          {/* Batch Seniors */}
+          <div>
+            <h1 className="font-bold text-xl mt-7">Batch Seniors</h1>
+            {[
+              { label: "Trainers", members: batch.batchTrainer },
+              { label: "Mentors", members: batch.batchMentor },
+              { label: "Reviewers", members: batch.batchReviewer },
+            ].map((section, idx) => (
+              <div key={idx}>
+                <h3 className="text-md font-semibold flex items-center gap-3 mt-4 mb-1">
+                  <UserCheck width={16} height={16} />
+                  {section.label}:
+                </h3>
+                <p className="text-sm font-normal">
+                  {section.members.map((id, key) => (
+                    <span key={key}>
+                      {findNameById(id)}
+                      {key < section.members.length - 1 ? ", " : ""}
+                    </span>
+                  ))}
+                </p>
+                <hr className="my-3" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Training Plan Dialog */}
+      {showAddPlanDialog && (
+        <AddPlanDialog
+          isOpen={showAddPlanDialog}
+          onClose={() => setShowAddPlanDialog(false)}
+        />
+      )}
+    </>
   );
 }
