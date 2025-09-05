@@ -1,9 +1,17 @@
+import { TrainingPlan } from "@/types/type";
 import { TEventColor } from "./types";
+import { format } from "date-fns";
 
 export interface IUser {
   id: string;
   name: string;
   picturePath: string | null;
+}
+
+export interface ICalendarCell {
+  day: number;
+  currentMonth: boolean;
+  date: Date;
 }
 
 export interface IEvent {
@@ -12,12 +20,16 @@ export interface IEvent {
   endDate: string;
   title: string;
   color: TEventColor;
-  description: string;
   user: IUser;
-}
+  startTime?: string;
+  endTime?: string;
+  plan?: TrainingPlan;
+  planId: string;
+  topicId: string;
 
-export interface ICalendarCell {
-  day: number;
-  currentMonth: boolean;
-  date: Date;
+  // added for calendar rendering
+  isHoliday?: boolean;
+  dayOfEvent?: string;
+  position?: number;
+  isMultiDay?: boolean;
 }

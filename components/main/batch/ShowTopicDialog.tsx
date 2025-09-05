@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { nanoid } from "@reduxjs/toolkit";
+import { useState, useEffect } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,32 +16,32 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormControl,
-} from "@/components/ui/form";
 import { topicSchema, TTopicForm } from "@/schemas/topic-schema";
 import { SmartSelect } from "@/components/ui/multi-select";
 import { FileUpload } from "@/components/ui/handle-file";
-import { useState } from "react";
 import { PlanTopic } from "@/types/type";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onAddTopic: (topic: PlanTopic) => void;
+  topicToEdit?: PlanTopic | null;
 }
 
 export default function ShowTopicDialog({
   isOpen,
   onClose,
   onAddTopic,
+  topicToEdit,
 }: Props) {
-  const form = useForm<TTopicForm>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<TTopicForm>({
     resolver: zodResolver(topicSchema),
     defaultValues: {
       topicTitle: "",
@@ -50,32 +51,51 @@ export default function ShowTopicDialog({
     },
   });
 
-  // 🔹 keep resources in state
   const [resources, setResources] = useState<File[]>([]);
 
-  const onSubmit = (values: TTopicForm) => {
-    const mappedResources = resources.map((f) => ({
-      id: nanoid(),
-      name: f.name,
-      size: f.size,
-      type: f.type,
-    }));
+  // 🟢 Prefill values if editing
+  useEffect(() => {
+    if (topicToEdit) {
+      reset({
+        topicTitle: topicToEdit.topicTitle,
+        topicDescription: topicToEdit.topicDescription,
+        topicDuration: topicToEdit.topicDuration,
+        topicDurationValue: topicToEdit.topicDurationValue,
+      });
 
-    const newTopic = {
-      topicId: nanoid(),
+      setResources(
+        topicToEdit.topicResources?.map((r) => {
+          // convert back into File if needed
+          return new File([], r.name, { type: r.type });
+        }) || []
+      );
+    }
+  }, [topicToEdit, reset]);
+
+  const onSubmit = (values: TTopicForm) => {
+    const mappedResources =
+      resources.length > 0
+        ? resources.map((f) => ({
+            id: nanoid(),
+            name: f.name,
+            size: f.size,
+            type: f.type,
+          }))
+        : topicToEdit?.topicResources || [];
+
+    const newTopic: PlanTopic = {
+      topicId: topicToEdit ? topicToEdit.topicId : nanoid(),
       topicTitle: values.topicTitle,
       topicDescription: values.topicDescription,
-      topicDurationValue: Number(values.topicDurationValue),
+      topicDurationValue: values.topicDurationValue,
       topicDuration: values.topicDuration,
       topicResources: mappedResources,
     };
 
-    console.log("✅ Adding Topic:", newTopic);
-
     onAddTopic(newTopic);
 
-    form.reset();
-    setResources([]); // clear uploaded files
+    reset();
+    setResources([]);
     onClose();
   };
 
@@ -83,92 +103,91 @@ export default function ShowTopicDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-full md:min-w-2xl">
         <DialogHeader>
-          <DialogTitle>Add Topic</DialogTitle>
+          <DialogTitle>{topicToEdit ? "Edit Topic" : "Add Topic"}</DialogTitle>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            id="topic-form"
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="grid gap-4 py-4"
-          >
-            <FormField
-              control={form.control}
-              name="topicTitle"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Topic Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter topic name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+        <form
+          id="topic-form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="grid gap-4 py-4"
+        >
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium">Topic Name</label>
+            <Input placeholder="Enter topic name" {...register("topicTitle")} />
+            {errors.topicTitle && (
+              <p className="text-red-500 text-xs">
+                {errors.topicTitle.message}
+              </p>
+            )}
+          </div>
+
+          {/* Duration */}
+          <div className="flex gap-2">
+            <div>
+              <label className="block text-sm font-medium">
+                Duration (value)
+              </label>
+              <Input
+                type="number"
+                min={1}
+                {...register("topicDurationValue", { valueAsNumber: true })}
+              />
+              {errors.topicDurationValue && (
+                <p className="text-red-500 text-xs">
+                  {errors.topicDurationValue.message}
+                </p>
               )}
-            />
-
-            <div className="flex gap-2">
-              <FormField
-                control={form.control}
-                name="topicDurationValue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duration (value)</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={1} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="topicDuration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duration (unit)</FormLabel>
-                    <FormControl>
-                      <SmartSelect
-                        options={[
-                          { value: "days", label: "Days" },
-                          { value: "weeks", label: "Weeks" },
-                          { value: "months", label: "Months" },
-                        ]}
-                        value={field.value}
-                        onChange={(val) => field.onChange(val)}
-                        placeholder="Select duration"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
-            <FormField
-              control={form.control}
-              name="topicDescription"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Enter description" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+            <div>
+              <label className="block text-sm font-medium">
+                Duration (unit)
+              </label>
+              <SmartSelect
+                options={[
+                  { value: "days", label: "Days" },
+                  { value: "weeks", label: "Weeks" },
+                  { value: "months", label: "Months" },
+                ]}
+                value={watch("topicDuration")}
+                onChange={(val) =>
+                  setValue("topicDuration", val as "days" | "weeks" | "months")
+                }
+                placeholder="Select duration"
+              />
+              {errors.topicDuration && (
+                <p className="text-red-500 text-xs">
+                  {errors.topicDuration.message}
+                </p>
               )}
-            />
+            </div>
+          </div>
 
-             <FileUpload onFiles={setResources} />
-          </form>
-        </Form>
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium">Description</label>
+            <Textarea
+              placeholder="Enter description"
+              {...register("topicDescription")}
+            />
+            {errors.topicDescription && (
+              <p className="text-red-500 text-xs">
+                {errors.topicDescription.message}
+              </p>
+            )}
+          </div>
+
+          {/* File Upload */}
+          <FileUpload onFiles={setResources} />
+        </form>
 
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
           <Button form="topic-form" type="submit">
-            Add Topic
+            {topicToEdit ? "Update Topic" : "Add Topic"}
           </Button>
         </DialogFooter>
       </DialogContent>

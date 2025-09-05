@@ -1,7 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
-
+import { createContext, useContext, useState, useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { IEvent, IUser } from "../interfaces";
 import { TBadgeVariant, TVisibleHours, TWorkingHours } from "../types";
@@ -9,10 +8,16 @@ import { TBadgeVariant, TVisibleHours, TWorkingHours } from "../types";
 interface ICalendarContext {
   selectedDate: Date;
   setSelectedDate: (date: Date | undefined) => void;
+
   selectedUserId: IUser["id"] | "all";
   setSelectedUserId: (userId: IUser["id"] | "all") => void;
+
+  selectedPlanId: string | "all";
+  setSelectedPlanId: (planId: string | "all") => void;
+
   badgeVariant: TBadgeVariant;
   setBadgeVariant: (variant: TBadgeVariant) => void;
+
   users: IUser[];
   workingHours: TWorkingHours;
   setWorkingHours: Dispatch<SetStateAction<TWorkingHours>>;
@@ -36,24 +41,40 @@ const WORKING_HOURS = {
 
 const VISIBLE_HOURS = { from: 7, to: 18 };
 
-export function CalendarProvider({ children, users, events }: { children: React.ReactNode; users: IUser[]; events: IEvent[] }) {
+export function CalendarProvider({
+  children,
+  users,
+  events,
+}: {
+  children: React.ReactNode;
+  users: IUser[];
+  events: IEvent[];
+}) {
   const [badgeVariant, setBadgeVariant] = useState<TBadgeVariant>("colored");
-  const [visibleHours, setVisibleHours] = useState<TVisibleHours>(VISIBLE_HOURS);
-  const [workingHours, setWorkingHours] = useState<TWorkingHours>(WORKING_HOURS);
+  const [visibleHours, setVisibleHours] =
+    useState<TVisibleHours>(VISIBLE_HOURS);
+  const [workingHours, setWorkingHours] =
+    useState<TWorkingHours>(WORKING_HOURS);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedUserId, setSelectedUserId] = useState<IUser["id"] | "all">("all");
+  const [selectedUserId, setSelectedUserId] = useState<IUser["id"] | "all">(
+    "all"
+  );
 
-  // This localEvents doesn't need to exists in a real scenario.
-  // It's used here just to simulate the update of the events.
-  // In a real scenario, the events would be updated in the backend
-  // and the request that fetches the events should be refetched
+  const [selectedPlanId, setSelectedPlanId] = useState<string | "all">("all");
+
   const [localEvents, setLocalEvents] = useState<IEvent[]>(events);
 
   const handleSelectDate = (date: Date | undefined) => {
     if (!date) return;
     setSelectedDate(date);
   };
+
+  // 🟢 Filter events based on selected plan
+  const filteredEvents = useMemo(() => {
+    if (selectedPlanId === "all") return localEvents;
+    return localEvents.filter((ev) => ev.planId === selectedPlanId);
+  }, [localEvents, selectedPlanId]);
 
   return (
     <CalendarContext.Provider
@@ -62,6 +83,8 @@ export function CalendarProvider({ children, users, events }: { children: React.
         setSelectedDate: handleSelectDate,
         selectedUserId,
         setSelectedUserId,
+        selectedPlanId,
+        setSelectedPlanId,
         badgeVariant,
         setBadgeVariant,
         users,
@@ -69,8 +92,7 @@ export function CalendarProvider({ children, users, events }: { children: React.
         setVisibleHours,
         workingHours,
         setWorkingHours,
-        // If you go to the refetch approach, you can remove the localEvents and pass the events directly
-        events: localEvents,
+        events: filteredEvents,
         setLocalEvents,
       }}
     >
@@ -81,6 +103,7 @@ export function CalendarProvider({ children, users, events }: { children: React.
 
 export function useCalendar(): ICalendarContext {
   const context = useContext(CalendarContext);
-  if (!context) throw new Error("useCalendar must be used within a CalendarProvider.");
+  if (!context)
+    throw new Error("useCalendar must be used within a CalendarProvider.");
   return context;
 }

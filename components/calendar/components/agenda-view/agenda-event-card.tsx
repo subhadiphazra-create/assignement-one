@@ -46,6 +46,8 @@ interface IProps {
 }
 
 export function AgendaEventCard({ event, eventCurrentDay, eventTotalDays }: IProps) {
+  console.log("rendering add event dialog 3");
+
   const { badgeVariant } = useCalendar();
 
   const startDate = parseISO(event.startDate);

@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AddPlanDialog from "./AddPlanDialog";
+import { findNameById } from "@/lib/employeeUtils";
 
 interface BatchCardProps {
   batch: Batch;
@@ -42,17 +43,6 @@ export default function BatchCard({ batch }: BatchCardProps) {
 
   const checkIsComplete = (endDate: string) => {
     return new Date() > new Date(endDate);
-  };
-
-  const findNameById = (id: string) => {
-    const trainee = mockEmployees.find((e) => e.userId === id);
-    return trainee
-      ? trainee.basicData.firstName +
-          " " +
-          trainee.basicData.middleName +
-          " " +
-          trainee.basicData.lastName
-      : "Unknown";
   };
 
   const options = [
@@ -75,12 +65,7 @@ export default function BatchCard({ batch }: BatchCardProps) {
             </h2>
             <div className="flex items-center gap-3">
               {!checkIsComplete(batch.batchEndDate) ? (
-                <CircleSmall
-                  width={16}
-                  height={16}
-                  color="green"
-                  className="animate-ping"
-                />
+                <p className="text-5xl text-green-400 mb-2 animate-pulse">•</p>
               ) : (
                 <CheckCheck width={18} height={18} color="green" />
               )}
