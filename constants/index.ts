@@ -1213,3 +1213,24 @@ export const mockEmployees: Employees = [
     rate: "16200",
   },
 ];
+
+
+// Full holidays with names
+export const HOLIDAYS: Record<string, string> = {
+  "2025-01-01": "New Year's Day",
+  "2025-01-14": "Makar Sankranti",
+  "2025-01-26": "Republic Day",
+  "2025-03-14": "Maha Shivaratri",
+  "2025-03-17": "Holi",
+  "2025-04-13": "Baisakhi",
+  "2025-04-21": "Mahavir Jayanti",
+  "2025-04-25": "Good Friday",
+  "2025-05-01": "Labour Day",
+  "2025-08-15": "Independence Day",
+  "2025-09-11": "Dummy Holiday",
+  "2025-10-02": "Gandhi Jayanti",
+  "2025-10-20": "Diwali",
+  "2025-12-25": "Christmas Day",
+};
+
+export const HOLIDAY_DATES: string[] = Object.keys(HOLIDAYS);

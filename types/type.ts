@@ -40,16 +40,16 @@ export interface ProfilePicture {
 export interface BasicData {
   bloodGroup: string;
   companyId: string;
-  confirmDate: string;  // ISO Date string
+  confirmDate: string; // ISO Date string
   discipline: string;
-  dob: string;          // ISO Date string
+  dob: string; // ISO Date string
   email: string;
   firstName: string;
   middleName: string;
   lastName: string;
   gender: string | null;
   grade: string;
-  joiningDate: string;  // ISO Date string
+  joiningDate: string; // ISO Date string
   orgEmail: string;
   profilePicture: ProfilePicture;
   reportingManager: string;
@@ -114,13 +114,13 @@ export interface PersonalIdData {
 export interface Employee {
   allInformationFilled: boolean;
   draftFlag: boolean;
-  developer: string;   // "True" | "False" (as per backend)
+  developer: string; // "True" | "False" (as per backend)
   isConsultant: boolean;
   isDeveloper: boolean;
   biometricID: string;
   employeeIdentifier: string;
-  state: string;   // e.g., "Active"
-  status: string;  // e.g., "Working"
+  state: string; // e.g., "Active"
+  status: string; // e.g., "Working"
   userId: string;
 
   bankData: BankData;
@@ -133,7 +133,6 @@ export interface Employee {
 }
 
 export type Employees = Employee[];
-
 
 export interface PlanTopic {
   topicId: string;
@@ -153,6 +152,21 @@ export interface TrainingPlan {
   planId: string;
   planTitle: string;
   planStartDate: string;
+  planStartTime: string;
+  planEndTime: string;
   planTopics: PlanTopic[];
   createdAt: string;
+  updatedAt: string;
+  user: string;
+  color:
+    | "blue"
+    | "green"
+    | "red"
+    | "yellow"
+    | "purple"
+    | "orange"
+    | "gray"
+    | undefined;
+  totalDurationInDays:number;
+  batchId:string;
 }
